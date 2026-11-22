@@ -1,0 +1,24 @@
+{
+  "name": "fullstack-javascript-book-website",
+  "version": "1.0.0",
+  "description": "Visual website for The Complete JavaScript, Node.js and Express.js Book",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "node build.js",
+    "verify": "node verify.js"
+  },
+  "keywords": [
+    "javascript",
+    "nodejs",
+    "express",
+    "book",
+    "documentation"
+  ],
+  "author": "@Albert Hackthon",
+  "license": "ISC",
+  "dependencies": {
+    "highlight.js": "^11.11.1",
+    "marked": "^15.0.7"
+  }
+}

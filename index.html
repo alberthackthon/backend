@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Complete JavaScript, Node.js and Express.js Book</title>
+  <meta name="description" content="A comprehensive, interactive web edition of The Complete JavaScript, Node.js and Express.js Book from zero to deployment.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+
+  <!-- Top Scroll / Reading Progress Bar -->
+  <div id="readingProgressBar" aria-hidden="true"></div>
+
+  <!-- Main Navigation Header -->
+  <header class="site-header">
+    <div class="header-left">
+      <button id="mobileMenuToggle" class="mobile-menu-btn" aria-label="Toggle menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+      <a href="#preface" class="brand-badge">
+        <div class="brand-icon">JS</div>
+        <div class="brand-text">
+          <span class="brand-title">Fullstack JS Book</span>
+          <span class="brand-subtitle">Node.js · Express.js · 2026</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="header-center">
+      <button id="searchTriggerBtn" class="search-trigger-btn" type="button">
+        <div class="search-trigger-content">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <span>Search the book...</span>
+        </div>
+        <kbd class="search-shortcut-badge">Ctrl K</kbd>
+      </button>
+    </div>
+
+    <div class="header-right">
+      <button id="fontSizeBtn" class="icon-btn" title="Adjust font size" aria-label="Adjust font size">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19L10 5L16 19"></path><path d="M6 14H14"></path><path d="M18 19V11"></path><path d="M16 14H20"></path></svg>
+      </button>
+
+      <button id="themeToggleBtn" class="icon-btn" title="Toggle theme (Light / Dark)" aria-label="Toggle dark mode">
+        <svg id="themeMoonIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <svg id="themeSunIcon" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+      </button>
+
+      <button id="playgroundToggleBtn" class="icon-btn btn-playground" title="Open JavaScript Playground">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span>Playground</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Sidebar Backdrop -->
+  <div id="sidebarBackdrop" class="sidebar-backdrop"></div>
+
+  <!-- App Layout Container -->
+  <div class="app-container">
+    
+    <!-- Left Navigation Sidebar -->
+    <aside id="navSidebar" class="nav-sidebar">
+      <div class="sidebar-header">
+        <div class="progress-card">
+          <div class="progress-header">
+            <span>Reading Progress</span>
+            <span id="readingStatsText" class="progress-percentage">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="overallProgressFill" class="progress-fill"></div>
+          </div>
+        </div>
+        <input id="sidebarFilterInput" class="sidebar-filter-input" type="search" placeholder="Filter chapters..." aria-label="Filter chapters">
+      </div>
+
+      <nav id="sidebarTree" class="sidebar-tree">
+        <!-- Populated dynamically by app.js -->
+      </nav>
+    </aside>
+
+    <!-- Center Article Area -->
+    <main class="main-wrapper">
+      <article class="article-container">
+        
+        <!-- Breadcrumb Navigation -->
+        <div class="breadcrumb-bar">
+          <a href="#preface" class="breadcrumb-item">Book</a>
+          <span class="breadcrumb-separator">/</span>
+          <span id="breadcrumbPart" class="breadcrumb-item">Foundations</span>
+          <span class="breadcrumb-separator">/</span>
+          <span id="breadcrumbChapter" class="breadcrumb-item">Current Chapter</span>
+        </div>
+
+        <!-- Chapter Meta Banner -->
+        <header class="chapter-meta-banner">
+          <div id="chapterPartPill" class="part-pill">Part 1: Foundations</div>
+          <h1 id="chapterMainTitle" class="chapter-main-title">Preface: Read This First</h1>
+          <div class="chapter-stat-badges">
+            <span class="chapter-stat-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span id="chapterReadTime">5 min read</span>
+            </span>
+            <span class="chapter-stat-item">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <span id="chapterWordCount">1,500 words</span>
+            </span>
+            <button id="markCompleteBtn" class="btn-mark-chapter" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span id="markCompleteText">Mark as Completed</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Full Chapter Rendered HTML (Unabridged) -->
+        <div id="renderedContent" class="rendered-content">
+          <!-- Dynamic Content -->
+        </div>
+
+        <!-- Previous & Next Chapter Navigation -->
+        <nav class="chapter-nav-footer">
+          <a id="prevChapterLink" href="#" class="nav-card prev">
+            <span class="nav-card-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              Previous Chapter
+            </span>
+            <span id="prevChapterTitle" class="nav-card-title">Previous Chapter Title</span>
+          </a>
+
+          <a id="nextChapterLink" href="#" class="nav-card next">
+            <span class="nav-card-label">
+              Next Chapter
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </span>
+            <span id="nextChapterTitle" class="nav-card-title">Next Chapter Title</span>
+          </a>
+        </nav>
+
+      </article>
+    </main>
+
+    <!-- Right Sidebar ("On This Page" Table of Contents) -->
+    <aside class="toc-sidebar">
+      <div class="toc-title">On This Page</div>
+      <ul id="tocList" class="toc-list">
+        <!-- Subheadings populated dynamically -->
+      </ul>
+      <div class="toc-actions">
+        <button id="scrollToTopBtn" class="toc-action-link" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+          <span>Back to top</span>
+        </button>
+        <button id="copyChapterLinkBtn" class="toc-action-link" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          <span id="copyChapterLinkText">Copy chapter link</span>
+        </button>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Search Modal -->
+  <div id="searchModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="searchInput">
+    <div class="search-modal-box">
+      <div class="search-modal-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input id="searchInput" class="search-modal-input" type="search" placeholder="Search chapters, concepts, code..." autocomplete="off">
+        <button id="closeSearchModalBtn" class="modal-close-btn" type="button" aria-label="Close search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="searchResultsList" class="search-results-list">
+        <!-- Results rendered here -->
+      </div>
+      <div class="search-modal-footer">
+        <div class="search-shortcuts-hint">
+          <span><kbd>↑</kbd> <kbd>↓</kbd> Navigate</span>
+          <span><kbd>Enter</kbd> Select</span>
+          <span><kbd>Esc</kbd> Close</span>
+        </div>
+        <span id="searchResultsCount">Search over 65,000 words & 30 chapters</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive JavaScript Playground Drawer -->
+  <div id="playgroundDrawer" class="playground-drawer">
+    <div class="playground-header">
+      <div class="playground-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span>Interactive JavaScript Playground</span>
+      </div>
+      <div class="playground-controls">
+        <button id="runCodeBtn" class="btn-run-code" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+          <span>Run (Ctrl+Enter)</span>
+        </button>
+        <button id="clearConsoleBtn" class="icon-btn" type="button" title="Clear console">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+        <button id="closePlaygroundBtn" class="icon-btn" type="button" title="Close playground">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+    </div>
+    <div class="playground-body">
+      <div class="playground-editor-col">
+        <div class="playground-pane-label">JavaScript Code</div>
+        <textarea id="playgroundCode" class="playground-textarea" spellcheck="false">// Try any modern JavaScript code here!
+const fruits = ['Apple', 'Banana', 'Cherry'];
+const upperFruits = fruits.map(f => f.toUpperCase());
+console.log('Original:', fruits);
+console.log('Uppercase:', upperFruits);
+
+// Async / Promise demo
+const wait = (ms) => new Promise(res => setTimeout(res, ms));
+async function demo() {
+  console.log('Starting timer...');
+  await wait(500);
+  console.log('Done after 500ms!');
+}
+demo();
+</textarea>
+      </div>
+      <div class="playground-console-col">
+        <div class="playground-pane-label">Console Output</div>
+        <div id="playgroundOutput" class="playground-output-terminal">
+          <div class="console-entry log">Console ready. Click "Run" to execute your code.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Book Data & Application Logic -->
+  <script src="book-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
