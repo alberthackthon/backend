@@ -1,27 +1,46 @@
 // ==========================================================================
-// The Complete JavaScript, Node.js and Express.js Book - Interactive Reader
+// The Fullstack Developer Bookshelf - Multi-Book Interactive Reader
 // ==========================================================================
 
 (function() {
   'use strict';
 
-  const data = window.BOOK_DATA;
-  if (!data) {
-    console.error('Book data not found!');
+  const multiData = window.BOOKS_DATA || { books: [window.BOOK_DATA], searchIndex: [] };
+  const books = multiData.books;
+  const searchIndex = multiData.searchIndex;
+
+  if (!books || books.length === 0) {
+    console.error('Books data not found!');
     return;
   }
 
   // State
+  let currentBookId = localStorage.getItem('fullstack_active_book') || 'book-1';
+  let currentBook = books.find(b => b.id === currentBookId) || books[0];
   let currentChapter = null;
-  let completedChapters = new Set();
-  try {
-    const saved = localStorage.getItem('fullstack_book_completed');
-    if (saved) completedChapters = new Set(JSON.parse(saved));
-  } catch (e) {}
 
+  // Completed chapters stored per book
+  function getCompletedSet(bookId) {
+    try {
+      const saved = localStorage.getItem(`fullstack_book_completed_${bookId}`);
+      if (saved) return new Set(JSON.parse(saved));
+    } catch (e) {}
+    return new Set();
+  }
+
+  function saveCompletedSet(bookId, set) {
+    localStorage.setItem(`fullstack_book_completed_${bookId}`, JSON.stringify([...set]));
+  }
+
+  let completedChapters = getCompletedSet(currentBook.id);
+
+  // Theme & Font
   let currentTheme = localStorage.getItem('fullstack_book_theme') || 'dark';
-  let fontSizes = ['15px', '16px', '18px', '20px'];
+  const fontSizes = ['15px', '16px', '18px', '20px'];
   let currentFontIdx = parseInt(localStorage.getItem('fullstack_book_font') || '1', 10);
+
+  // Search Filter State ('all' | 'book-1' | 'book-2')
+  let currentSearchFilter = 'all';
 
   // DOM Elements
   const htmlEl = document.documentElement;
@@ -30,6 +49,7 @@
   const chapterPartPillEl = document.getElementById('chapterPartPill');
   const chapterReadTimeEl = document.getElementById('chapterReadTime');
   const chapterWordCountEl = document.getElementById('chapterWordCount');
+  const breadcrumbBookEl = document.getElementById('breadcrumbBook');
   const breadcrumbPartEl = document.getElementById('breadcrumbPart');
   const breadcrumbChapterEl = document.getElementById('breadcrumbChapter');
   const markCompleteBtn = document.getElementById('markCompleteBtn');
@@ -40,6 +60,11 @@
   const nextChapterTitle = document.getElementById('nextChapterTitle');
   const sidebarTreeEl = document.getElementById('sidebarTree');
   const sidebarFilterInput = document.getElementById('sidebarFilterInput');
+  const activeBookBadge = document.getElementById('activeBookBadge');
+  const activeBookTitle = document.getElementById('activeBookTitle');
+  const brandIcon = document.getElementById('brandIcon');
+  const brandTitle = document.getElementById('brandTitle');
+  const bookSwitcher = document.getElementById('bookSwitcher');
   const tocListEl = document.getElementById('tocList');
   const progressBarEl = document.getElementById('readingProgressBar');
   const overallProgressFill = document.getElementById('overallProgressFill');
@@ -48,6 +73,7 @@
   const searchInput = document.getElementById('searchInput');
   const searchResultsList = document.getElementById('searchResultsList');
   const searchResultsCount = document.getElementById('searchResultsCount');
+  const searchFilterTabs = document.getElementById('searchFilterTabs');
   const searchTriggerBtn = document.getElementById('searchTriggerBtn');
   const closeSearchModalBtn = document.getElementById('closeSearchModalBtn');
   const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -62,13 +88,14 @@
   const closePlaygroundBtn = document.getElementById('closePlaygroundBtn');
   const runCodeBtn = document.getElementById('runCodeBtn');
   const clearConsoleBtn = document.getElementById('clearConsoleBtn');
+  const templateSelect = document.getElementById('templateSelect');
   const playgroundCode = document.getElementById('playgroundCode');
   const playgroundOutput = document.getElementById('playgroundOutput');
   const mobileMenuToggle = document.getElementById('mobileMenuToggle');
   const navSidebar = document.getElementById('navSidebar');
   const sidebarBackdrop = document.getElementById('sidebarBackdrop');
 
-  // Initialize Theme
+  // Theme Management
   function applyTheme(theme) {
     htmlEl.setAttribute('data-theme', theme);
     currentTheme = theme;
@@ -87,7 +114,7 @@
     applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
   });
 
-  // Initialize Font Size
+  // Font Size
   function applyFontSize(idx) {
     currentFontIdx = idx % fontSizes.length;
     htmlEl.style.fontSize = fontSizes[currentFontIdx];
@@ -99,11 +126,58 @@
     applyFontSize(currentFontIdx + 1);
   });
 
-  // Build Left Sidebar
+  // Switch Active Book
+  function switchBook(bookId, targetChapterId, subSlug) {
+    const targetBook = books.find(b => b.id === bookId);
+    if (!targetBook) return;
+
+    currentBookId = bookId;
+    currentBook = targetBook;
+    completedChapters = getCompletedSet(currentBookId);
+    localStorage.setItem('fullstack_active_book', currentBookId);
+
+    // Update Header Switcher Tabs
+    if (bookSwitcher) {
+      bookSwitcher.querySelectorAll('.book-tab').forEach(tab => {
+        const isSelected = tab.getAttribute('data-book-id') === currentBookId;
+        tab.classList.toggle('active', isSelected);
+        tab.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      });
+    }
+
+    // Update Branding
+    if (brandIcon) {
+      brandIcon.textContent = currentBook.icon || 'JS';
+      brandIcon.style.background = currentBook.gradient || 'linear-gradient(135deg, #f59e0b, #ea580c)';
+    }
+    if (activeBookBadge) activeBookBadge.textContent = currentBook.badge || 'Active Book';
+    if (activeBookTitle) activeBookTitle.textContent = currentBook.shortTitle || currentBook.title;
+
+    // Render new sidebar
+    renderSidebar();
+
+    // Load chapter
+    const chId = targetChapterId || 'preface';
+    loadChapter(chId, subSlug);
+  }
+
+  // Header Book Switcher Click
+  if (bookSwitcher) {
+    bookSwitcher.querySelectorAll('.book-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const bId = tab.getAttribute('data-book-id');
+        if (bId !== currentBookId) {
+          window.location.hash = `${bId}/preface`;
+        }
+      });
+    });
+  }
+
+  // Render Left Navigation Sidebar
   function renderSidebar() {
     sidebarTreeEl.innerHTML = '';
 
-    data.parts.forEach(part => {
+    currentBook.parts.forEach(part => {
       const partGroup = document.createElement('div');
       partGroup.className = 'part-group';
       partGroup.setAttribute('data-part-id', part.partId);
@@ -124,7 +198,7 @@
       chapterList.className = 'chapter-list';
 
       // Find chapters in this part
-      const chaptersInPart = data.chapters.filter(c => {
+      const chaptersInPart = currentBook.chapters.filter(c => {
         if (part.chapters.includes('preface') && c.id === 'preface') return true;
         if (part.chapters.includes('appendices') && c.id === 'appendices') return true;
         return part.chapters.includes(c.number);
@@ -136,7 +210,7 @@
         li.setAttribute('data-chapter-id', ch.id);
 
         const a = document.createElement('a');
-        a.href = `#${ch.id}`;
+        a.href = `#${currentBook.id}/${ch.id}`;
         a.className = 'chapter-item-link';
         if (currentChapter && currentChapter.id === ch.id) {
           a.classList.add('active');
@@ -178,9 +252,9 @@
     updateOverallProgress();
   }
 
-  // Update Overall Progress
+  // Update Overall Progress for Active Book
   function updateOverallProgress() {
-    const total = data.chapters.length;
+    const total = currentBook.chapters.length;
     const completedCount = completedChapters.size;
     const pct = Math.round((completedCount / total) * 100);
     overallProgressFill.style.width = `${pct}%`;
@@ -193,7 +267,7 @@
     } else {
       completedChapters.add(id);
     }
-    localStorage.setItem('fullstack_book_completed', JSON.stringify([...completedChapters]));
+    saveCompletedSet(currentBook.id, completedChapters);
 
     // Update UI
     document.querySelectorAll(`[data-check-id="${id}"]`).forEach(btn => {
@@ -274,19 +348,21 @@
 
   // Load and Render Chapter
   function loadChapter(id, subSlug) {
-    let chapter = data.chapters.find(c => c.id === id);
+    let chapter = currentBook.chapters.find(c => c.id === id);
     if (!chapter) {
-      chapter = data.chapters[0]; // fallback to preface
+      chapter = currentBook.chapters[0];
       id = chapter.id;
     }
 
     currentChapter = chapter;
 
-    // Header info
+    // Header info & breadcrumbs
     chapterMainTitleEl.textContent = chapter.title;
     chapterPartPillEl.textContent = `${chapter.partIcon || '📄'} ${chapter.partTitle}`;
     chapterReadTimeEl.textContent = `~${chapter.readTimeMin} min read`;
     chapterWordCountEl.textContent = `${chapter.wordCount.toLocaleString()} words`;
+    breadcrumbBookEl.textContent = currentBook.badge + ': ' + currentBook.shortTitle;
+    breadcrumbBookEl.href = `#${currentBook.id}/preface`;
     breadcrumbPartEl.textContent = chapter.partTitle;
     breadcrumbChapterEl.textContent = chapter.title.replace(/^Chapter \d+:\s*/i, '');
 
@@ -304,37 +380,35 @@
     const activeLink = document.querySelector(`[data-chapter-id="${chapter.id}"] .chapter-item-link`);
     if (activeLink) {
       activeLink.classList.add('active');
-      // Ensure parent part group is expanded
       const partGroup = activeLink.closest('.part-group');
       if (partGroup) partGroup.classList.remove('collapsed');
-      // Scroll into view if needed
       activeLink.scrollIntoView({ block: 'nearest' });
     }
 
     // Previous & Next Chapter links
-    const currentIdx = data.chapters.findIndex(c => c.id === chapter.id);
+    const currentIdx = currentBook.chapters.findIndex(c => c.id === chapter.id);
     if (currentIdx > 0) {
-      const prevCh = data.chapters[currentIdx - 1];
-      prevChapterLink.href = `#${prevCh.id}`;
+      const prevCh = currentBook.chapters[currentIdx - 1];
+      prevChapterLink.href = `#${currentBook.id}/${prevCh.id}`;
       prevChapterTitle.textContent = prevCh.title;
       prevChapterLink.style.visibility = 'visible';
     } else {
       prevChapterLink.style.visibility = 'hidden';
     }
 
-    if (currentIdx < data.chapters.length - 1) {
-      const nextCh = data.chapters[currentIdx + 1];
-      nextChapterLink.href = `#${nextCh.id}`;
+    if (currentIdx < currentBook.chapters.length - 1) {
+      const nextCh = currentBook.chapters[currentIdx + 1];
+      nextChapterLink.href = `#${currentBook.id}/${nextCh.id}`;
       nextChapterTitle.textContent = nextCh.title;
       nextChapterLink.style.visibility = 'visible';
     } else {
       nextChapterLink.style.visibility = 'hidden';
     }
 
-    // Build right sidebar Table of Contents ("On This Page")
+    // Right Sidebar TOC
     renderTableOfContents(chapter);
 
-    // Scroll to section or top
+    // Scroll to sub-section or top
     if (subSlug) {
       setTimeout(() => {
         const target = document.getElementById(subSlug);
@@ -360,7 +434,7 @@
     chapter.toc.forEach(item => {
       const li = document.createElement('li');
       const a = document.createElement('a');
-      a.href = `#${chapter.id}/${item.slug}`;
+      a.href = `#${currentBook.id}/${chapter.id}/${item.slug}`;
       a.className = `toc-item-link level-${item.level}`;
       a.setAttribute('data-target-slug', item.slug);
       a.textContent = item.title;
@@ -369,7 +443,7 @@
         e.preventDefault();
         const target = document.getElementById(item.slug);
         if (target) {
-          window.location.hash = `${chapter.id}/${item.slug}`;
+          window.location.hash = `${currentBook.id}/${chapter.id}/${item.slug}`;
           target.scrollIntoView({ behavior: 'smooth' });
         }
       });
@@ -381,14 +455,12 @@
 
   // Scroll Spy & Top Progress Bar
   window.addEventListener('scroll', () => {
-    // Top reading progress bar
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
     if (docHeight > 0) {
       const scrolled = (window.scrollY / docHeight) * 100;
       progressBarEl.style.width = `${Math.min(100, Math.max(0, scrolled))}%`;
     }
 
-    // Scroll spy on headings
     const headings = renderedContentEl.querySelectorAll('h2, h3, h4');
     let activeId = null;
     const scrollPos = window.scrollY + 120;
@@ -425,40 +497,38 @@
     });
   });
 
-  // Hash Routing
+  // Comprehensive Hash Routing
   function handleRoute() {
     let hash = window.location.hash.replace(/^#/, '').trim();
     if (!hash) {
-      hash = 'preface';
+      hash = `${currentBookId}/preface`;
     }
 
-    let chapterId = hash;
-    let subSlug = '';
+    const segments = hash.split('/');
+    let targetBookId = currentBookId;
+    let targetChapterId = 'preface';
+    let targetSubSlug = '';
 
-    if (hash.includes('/')) {
-      const parts = hash.split('/');
-      chapterId = parts[0];
-      subSlug = parts[1];
+    if (segments[0].startsWith('book-')) {
+      targetBookId = segments[0];
+      targetChapterId = segments[1] || 'preface';
+      targetSubSlug = segments[2] || '';
     } else {
-      // Check if hash matches a known chapter
-      const matched = data.chapters.find(c => c.id === hash);
-      if (!matched) {
-        // Maybe it's a section anchor in current chapter
-        const anchorEl = document.getElementById(hash);
-        if (anchorEl) {
-          anchorEl.scrollIntoView({ behavior: 'smooth' });
-          return;
-        }
-        chapterId = 'preface';
-      }
+      // Backwards compatible format: #chapter-1 or #preface
+      targetChapterId = segments[0];
+      targetSubSlug = segments[1] || '';
     }
 
-    loadChapter(chapterId, subSlug);
+    if (targetBookId !== currentBookId) {
+      switchBook(targetBookId, targetChapterId, targetSubSlug);
+    } else {
+      loadChapter(targetChapterId, targetSubSlug);
+    }
   }
 
   window.addEventListener('hashchange', handleRoute);
 
-  // Search Modal Logic
+  // Search Modal
   function openSearchModal() {
     searchModal.classList.add('open');
     searchInput.value = '';
@@ -477,6 +547,18 @@
     if (e.target === searchModal) closeSearchModal();
   });
 
+  // Search Filter Tabs
+  if (searchFilterTabs) {
+    searchFilterTabs.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        searchFilterTabs.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentSearchFilter = tab.getAttribute('data-filter');
+        renderSearchResults(searchInput.value.trim());
+      });
+    });
+  }
+
   searchInput.addEventListener('input', (e) => {
     renderSearchResults(e.target.value.trim());
   });
@@ -487,13 +569,18 @@
     searchResultsList.innerHTML = '';
     selectedResultIdx = 0;
 
+    let pool = searchIndex;
+    if (currentSearchFilter !== 'all') {
+      pool = searchIndex.filter(item => item.bookId === currentSearchFilter);
+    }
+
     if (!query) {
-      searchResultsCount.textContent = 'Type to search over 65,000 words';
-      // Suggest first 5 chapters
-      data.chapters.slice(0, 5).forEach((ch, idx) => {
-        const item = createResultItem(ch.id, '', ch.title, `Chapter overview (${ch.readTimeMin} min read)`, ch.partTitle, '');
-        if (idx === 0) item.classList.add('selected');
-        searchResultsList.appendChild(item);
+      searchResultsCount.textContent = `Search over ${pool.length} indexed topics`;
+      // Sample suggestions
+      pool.slice(0, 6).forEach((item, idx) => {
+        const itemEl = createResultItem(item.bookId, item.chapterId, item.slug, item.heading, item.snippet, item.partTitle, item.bookTitle, '');
+        if (idx === 0) itemEl.classList.add('selected');
+        searchResultsList.appendChild(itemEl);
       });
       return;
     }
@@ -501,13 +588,14 @@
     const qLower = query.toLowerCase();
     const matches = [];
 
-    // Search through search index
-    for (const item of data.searchIndex) {
+    for (const item of pool) {
       const headingMatch = item.heading.toLowerCase().includes(qLower);
       const snippetMatch = item.snippet.toLowerCase().includes(qLower);
 
       if (headingMatch || snippetMatch) {
         matches.push({
+          bookId: item.bookId,
+          bookTitle: item.bookTitle,
           chapterId: item.chapterId,
           slug: item.slug,
           heading: item.heading,
@@ -516,11 +604,11 @@
           score: headingMatch ? 10 : 1
         });
       }
-      if (matches.length >= 25) break;
+      if (matches.length >= 35) break;
     }
 
     matches.sort((a, b) => b.score - a.score);
-    const finalResults = matches.slice(0, 15);
+    const finalResults = matches.slice(0, 20);
 
     searchResultsCount.textContent = `${matches.length} result${matches.length === 1 ? '' : 's'} found`;
 
@@ -530,22 +618,24 @@
     }
 
     finalResults.forEach((res, idx) => {
-      const itemEl = createResultItem(res.chapterId, res.slug, res.heading, res.snippet, res.partTitle, query);
+      const itemEl = createResultItem(res.bookId, res.chapterId, res.slug, res.heading, res.snippet, res.partTitle, res.bookTitle, query);
       if (idx === 0) itemEl.classList.add('selected');
       searchResultsList.appendChild(itemEl);
     });
   }
 
-  function createResultItem(chapterId, slug, title, snippet, partTitle, query) {
+  function createResultItem(bookId, chapterId, slug, title, snippet, partTitle, bookTitle, query) {
     const a = document.createElement('a');
     a.className = 'search-result-item';
-    a.href = slug ? `#${chapterId}/${slug}` : `#${chapterId}`;
+    a.href = slug ? `#${bookId}/${chapterId}/${slug}` : `#${bookId}/${chapterId}`;
 
     const highlightedTitle = highlightMatch(title, query);
     const highlightedSnippet = highlightMatch(snippet, query);
+    const tagClass = bookId === 'book-2' ? 'tag-book-2' : 'tag-book-1';
 
     a.innerHTML = `
       <div class="result-item-header">
+        <span class="result-book-tag ${tagClass}">${escapeHtml(bookTitle || bookId)}</span>
         <span class="result-part-tag">${escapeHtml(partTitle)}</span>
       </div>
       <div class="result-title">${highlightedTitle}</div>
@@ -561,8 +651,6 @@
 
   function highlightMatch(text, query) {
     if (!query) return escapeHtml(text);
-    const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${safeQuery})`, 'gi');
     return escapeHtml(text).replace(new RegExp(`(${escapeRegex(escapeHtml(query))})`, 'gi'), '<mark>$1</mark>');
   }
 
@@ -570,7 +658,7 @@
     return string.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&');
   }
 
-  // Keyboard navigation inside search modal
+  // Keyboard navigation inside search
   searchInput.addEventListener('keydown', (e) => {
     const items = searchResultsList.querySelectorAll('.search-result-item');
     if (items.length === 0) return;
@@ -604,21 +692,18 @@
 
   // Global Keyboard Shortcuts
   window.addEventListener('keydown', (e) => {
-    // Ctrl+K or Cmd+K: Open search
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       openSearchModal();
       return;
     }
 
-    // '/' opens search when not in input
     if (e.key === '/' && document.activeElement !== searchInput && document.activeElement !== playgroundCode) {
       e.preventDefault();
       openSearchModal();
       return;
     }
 
-    // Escape closes modals
     if (e.key === 'Escape') {
       closeSearchModal();
       closePlayground();
@@ -626,17 +711,12 @@
       return;
     }
 
-    // Arrow navigation for chapters (when not typing)
-    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
 
     if (e.key === 'ArrowLeft') {
-      if (prevChapterLink.style.visibility !== 'hidden') {
-        prevChapterLink.click();
-      }
+      if (prevChapterLink.style.visibility !== 'hidden') prevChapterLink.click();
     } else if (e.key === 'ArrowRight') {
-      if (nextChapterLink.style.visibility !== 'hidden') {
-        nextChapterLink.click();
-      }
+      if (nextChapterLink.style.visibility !== 'hidden') nextChapterLink.click();
     }
   });
 
@@ -654,7 +734,74 @@
   mobileMenuToggle.addEventListener('click', openMobileSidebar);
   sidebarBackdrop.addEventListener('click', closeMobileSidebar);
 
-  // JavaScript Playground Runner
+  // Playground Templates
+  const playgroundTemplates = {
+    'js-basics': `// Modern JavaScript Demo
+const numbers = [10, 25, 40, 55, 70];
+const doubled = numbers.map(n => n * 2);
+console.log('Original numbers:', numbers);
+console.log('Doubled:', doubled);
+
+// Async / Promise demo
+const fetchStatus = async () => {
+  return new Promise(res => setTimeout(() => res({ status: 200, ok: true }), 400));
+};
+
+console.log('Awaiting status...');
+const res = await fetchStatus();
+console.log('Status result:', res);`,
+
+    'ts-types': `// TypeScript / Type-Checking Simulation
+// Note: Browsers run JS; this playground executes valid JS/TS constructs!
+interface User {
+  id: number;
+  name: string;
+  role: 'admin' | 'student';
+}
+
+const user = {
+  id: 1,
+  name: 'Albert',
+  role: 'admin'
+};
+
+function formatUser(u) {
+  return \`[\${u.role.toUpperCase()}] \${u.name} (#\${u.id})\`;
+}
+
+console.log(formatUser(user));`,
+
+    'react-state': `// React State Logic Simulation
+function createStore(initial) {
+  let state = initial;
+  const listeners = [];
+  return {
+    getState: () => state,
+    setState: (updater) => {
+      state = typeof updater === 'function' ? updater(state) : updater;
+      listeners.forEach(fn => fn(state));
+    },
+    subscribe: (fn) => listeners.push(fn)
+  };
+}
+
+const counterStore = createStore({ count: 0 });
+counterStore.subscribe(s => console.log('State updated:', s));
+
+counterStore.setState(s => ({ count: s.count + 1 }));
+counterStore.setState(s => ({ count: s.count + 5 }));`,
+
+    'custom': `// Write your own code here!\nconsole.log('Hello from Playground!');\n`
+  };
+
+  if (templateSelect) {
+    templateSelect.addEventListener('change', (e) => {
+      const code = playgroundTemplates[e.target.value];
+      if (code) playgroundCode.value = code;
+    });
+  }
+
+  // Playground Drawer
   function openPlayground() {
     playgroundDrawer.classList.add('open');
     playgroundCode.focus();
@@ -695,9 +842,8 @@
 
   function runPlaygroundCode() {
     const code = playgroundCode.value;
-    logToPlayground('log', '--- Executing script ---');
+    logToPlayground('log', '--- Running script ---');
 
-    // Create sandbox console
     const customConsole = {
       log: (...args) => logToPlayground('log', ...args),
       warn: (...args) => logToPlayground('warn', ...args),
@@ -707,7 +853,6 @@
     };
 
     try {
-      // Async function wrapper to allow top-level await
       const wrapped = new Function('console', `
         return (async () => {
           ${code}
@@ -718,7 +863,7 @@
       if (result && typeof result.then === 'function') {
         result.then(val => {
           if (val !== undefined) {
-            logToPlayground('return', 'Return value: ' + (typeof val === 'object' ? JSON.stringify(val) : val));
+            logToPlayground('return', 'Returned: ' + (typeof val === 'object' ? JSON.stringify(val) : val));
           }
         }).catch(err => {
           logToPlayground('error', 'Runtime Error: ' + err.message);
@@ -747,8 +892,8 @@
       .replace(/'/g, '&#39;');
   }
 
-  // Initial startup
-  renderSidebar();
+  // Initial Boot
+  switchBook(currentBookId);
   handleRoute();
 
 })();

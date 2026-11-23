@@ -1,48 +1,46 @@
-# The Complete JavaScript, Node.js and Express.js Book — Interactive Web Edition
+# The Full-Stack Developer Bookshelf — Interactive Multi-Book Web Library
 
-This project converts the entire book **The Complete JavaScript, Node.js and Express.js Book** (`437 KB`, `12,074 lines`, `65,000+ words`) into a visual, responsive documentation website.
+An interactive, responsive documentation and learning platform containing two complete developer books by **@Albert Hackthon**:
 
-> **Zero Content Loss Guarantee**: Every chapter, section, exercise, code block, table, command, and appendix has been preserved verbatim.
+1. **Book 1: The Complete JavaScript, Node.js and Express.js Book**
+   - 30 Chapters & Sections · 62,348 words · 12,074 lines
+   - Foundations, Modern JavaScript (ES6+), DOM, Async, Node.js Core, Express.js APIs, Databases & Security.
+2. **Book 2: The Complete TypeScript, React.js and Next.js Book**
+   - 26 Chapters & Sections · 67,294 words · 10,981 lines
+   - TypeScript 7, React 19 (Hooks, Actions, View Transitions), Next.js 16 (App Router, Server Actions, Caching, Prisma, Auth, CI/CD).
+
+> **Total**: 56 complete chapters, 129,642 words, 784 indexed search topics with **zero content loss**.
 
 ---
 
-## 🚀 How to Open and View the Website
-
-You can view the website in two ways:
+## 🚀 How to View the Website
 
 ### Option 1: Open Directly in Your Browser (No Server Needed)
-Simply open the [`index.html`](./index.html) file directly in your favorite browser (Google Chrome, Microsoft Edge, Firefox, Safari, Brave):
-- Double click `index.html` in your file explorer, or
-- Right click `index.html` -> **Open with** -> **Google Chrome** / **Microsoft Edge**.
+Open [`index.html`](./index.html) in any browser (Chrome, Edge, Firefox, Brave, Safari). It works completely offline!
 
 ### Option 2: Run with the Local Server
-A lightweight, zero-dependency Node.js server is included:
-
 ```bash
-# Start the web server
 npm start
 ```
-
 Then visit [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## ✨ Features
+## 🌟 Interactive Features
 
-- **Unabridged Book Content**: All 30 sections (Preface, Chapters 1 through 28, and Appendices) converted to high-fidelity semantic HTML.
-- **Dark & Light Mode**: Seamless theme switching with persistence in `localStorage`.
-- **Global Full-Text Search (`Ctrl + K` or `/`)**: Search through 430+ headings, code snippets, and concepts across all chapters with instant highlighting and keyboard navigation.
-- **Interactive JavaScript Playground**: An embedded code runner to practice JavaScript snippets directly in the browser with live console output.
-- **"On This Page" Scroll-Spy**: Dynamic right sidebar outlining all H3 and H4 subheadings, highlighting your position as you scroll.
-- **Reading Progress Tracker**: Track completed chapters with checkmarks and an overall progress bar saved to your browser's local storage.
-- **One-Click Code Copy**: Copy buttons on every code block with animated feedback and language badges (`JavaScript`, `Bash`, `HTML`, `CSS`, `JSON`, `SQL`).
-- **Responsive Layout**: Designed for mobile, tablet, and wide desktop screens with an accessible slide-out navigation drawer.
-- **Font Size Adjuster**: Toggle between comfortable reading font sizes directly from the header.
+- **Header Book Switcher**: Toggle seamlessly between **Book 1 (JS & Node.js)** and **Book 2 (TS, React & Next.js)** with instant sidebar and theme updates.
+- **Unified Global Search (`Ctrl + K` or `/`)**: Search across all 56 chapters and 784 topics, or filter by book with instant keyword highlighting.
+- **Interactive Code Playground**: Embedded runner for testing JavaScript, TypeScript, and React state snippets directly in the browser with live console output.
+- **"On This Page" Scroll-Spy**: Dynamic right sidebar outlining H3 and H4 subheadings with real-time scroll tracking.
+- **Per-Book Reading Progress**: Track completed chapters with checkmarks and a progress bar saved to your browser's local storage for each book independently.
+- **One-Click Code Copy**: Copy button with animated feedback on every code snippet.
+- **Dark / Light Mode**: Eye-friendly documentation theme with persistent preference.
+- **Font Size Adjuster**: `A-` / `A+` controls for comfortable reading.
 
 ---
 
 ## 🛠 Project Scripts
 
 - `npm start`: Starts the local HTTP server on port 3000.
-- `npm run build`: Re-parses the markdown book and regenerates `book-data.js`.
-- `npm run verify`: Runs automated content integrity checks against the markdown source.
+- `npm run build`: Compiles both markdown books into `book-data.js`.
+- `npm run verify`: Runs automated content integrity checks against both markdown source files.
